@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { parseApiError } from '../../../shared/api/parseApiError';
+import type { FieldErrors } from '../../../shared/api/parseApiError';
 import type { UserDto, CreateUserRequest } from '../types';
 
 interface Props {
@@ -18,6 +20,7 @@ export default function UserForm({ user, onSave, onClose }: Props) {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   useEffect(() => {
     if (user) {
@@ -25,10 +28,17 @@ export default function UserForm({ user, onSave, onClose }: Props) {
     }
   }, [user]);
 
+  const handleChange = (field: string, value: string | boolean) => {
+    setForm((f) => ({ ...f, [field]: value }));
+    setError('');
+    setFieldErrors({});
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError('');
+    setFieldErrors({});
     try {
       if (isEdit && user) {
         await onSave({ ...user, userName: form.userName, email: form.email, role: form.role, isActive: form.isActive });
@@ -36,14 +46,21 @@ export default function UserForm({ user, onSave, onClose }: Props) {
         await onSave({ userName: form.userName, email: form.email, password: form.password, role: form.role });
       }
       onClose();
-    } catch {
-      setError('Failed to save user');
+    } catch (err: unknown) {
+      const { generalError, fieldErrors: fe } = parseApiError(err, 'Failed to save user');
+      setError(generalError);
+      setFieldErrors(fe);
     } finally {
       setSaving(false);
     }
   };
 
-  const inputClass = "w-full px-4 py-3 rounded-lg bg-white border border-slate-300 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500";
+  const inputClass = (field: string) =>
+    `w-full px-4 py-3 rounded-lg bg-white border text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 transition-colors ${
+      fieldErrors[field]
+        ? 'border-red-400 focus:border-red-400 focus:ring-red-400'
+        : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
+    }`;
 
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 px-4">
@@ -55,30 +72,44 @@ export default function UserForm({ user, onSave, onClose }: Props) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="text" placeholder="Username" value={form.userName}
-            onChange={(e) => setForm((f) => ({ ...f, userName: e.target.value }))}
-            className={inputClass} required />
-          <input type="email" placeholder="Email" value={form.email}
-            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            className={inputClass} required />
+          <div className="space-y-1">
+            <input type="text" placeholder="Username" value={form.userName}
+              onChange={(e) => handleChange('userName', e.target.value)}
+              className={inputClass('username')} />
+            {fieldErrors['username'] && <p className="text-red-500 text-xs px-1">{fieldErrors['username']}</p>}
+          </div>
+
+          <div className="space-y-1">
+            <input type="text" placeholder="Email" value={form.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              className={inputClass('email')} />
+            {fieldErrors['email'] && <p className="text-red-500 text-xs px-1">{fieldErrors['email']}</p>}
+          </div>
+
           {!isEdit && (
-            <input type="password" placeholder="Password (min 8 characters)" value={form.password}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-              className={inputClass} required />
+            <div className="space-y-1">
+              <input type="password" placeholder="Password (min 8 characters)" value={form.password}
+                onChange={(e) => handleChange('password', e.target.value)}
+                className={inputClass('password')} />
+              {fieldErrors['password'] && <p className="text-red-500 text-xs px-1">{fieldErrors['password']}</p>}
+            </div>
           )}
-          <select value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-            className={inputClass}>
+
+          <select value={form.role} onChange={(e) => handleChange('role', e.target.value)}
+            className={inputClass('role')}>
             <option value="User">User</option>
             <option value="Admin">Admin</option>
           </select>
+
           {isEdit && (
             <label className="flex items-center gap-3 cursor-pointer">
               <input type="checkbox" checked={form.isActive}
-                onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
+                onChange={(e) => handleChange('isActive', e.target.checked)}
                 className="w-4 h-4 rounded accent-indigo-600" />
               <span className="text-slate-600 text-sm">Active</span>
             </label>
           )}
+
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}
               className="flex-1 py-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition-colors cursor-pointer">
