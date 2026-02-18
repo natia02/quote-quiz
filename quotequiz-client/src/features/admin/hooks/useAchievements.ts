@@ -13,7 +13,7 @@ export function useAchievements() {
       .then((res) => setHistory(res.data))
       .catch((err: unknown) => {
         if (axios.isAxiosError(err)) {
-          setError(err.response?.data?.message || 'Failed to load achievements');
+          setError(err.response?.data?.error || 'Failed to load achievements');
         } else {
           setError('Failed to load achievements');
         }

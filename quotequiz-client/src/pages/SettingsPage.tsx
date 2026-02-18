@@ -20,7 +20,7 @@ export default function SettingsPage() {
 
   const modes: { value: QuizMode; label: string; description: string }[] = [
     { value: 'Binary', label: 'Yes / No', description: 'A quote is shown with an author name — you decide if it matches.' },
-    { value: 'MultipleChoice', label: 'Multiple Choice', description: 'Pick the correct author from four options.' },
+    { value: 'MultipleChoice', label: 'Multiple Choice', description: 'Pick the correct author from three options.' },
   ];
 
   return (

@@ -21,7 +21,7 @@ export function useQuiz() {
       setQuestion(res.data);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || "Failed to load question");
+        setError(err.response?.data?.error || "Failed to load question");
       } else {
         setError("Failed to load question");
       }
@@ -46,7 +46,7 @@ export function useQuiz() {
       }));
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || "Failed to submit answer");
+        setError(err.response?.data?.error || "Failed to submit answer");
       } else {
         setError("Failed to submit answer");
       }

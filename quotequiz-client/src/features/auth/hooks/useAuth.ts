@@ -20,7 +20,7 @@ export function useAuth() {
       navigate('/quiz');
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || 'Invalid credentials');
+        setError(err.response?.data?.error || 'Invalid credentials');
       } else {
         setError('Invalid credentials');
       }
@@ -38,7 +38,7 @@ export function useAuth() {
       navigate('/quiz');
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || 'Registration failed');
+        setError(err.response?.data?.error || 'Registration failed');
       } else {
         setError('Registration failed');
       }

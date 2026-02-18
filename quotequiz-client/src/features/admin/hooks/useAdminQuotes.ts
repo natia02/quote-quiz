@@ -15,7 +15,7 @@ export function useAdminQuotes() {
       setQuotes(res.data);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || 'Failed to load quotes');
+        setError(err.response?.data?.error || 'Failed to load quotes');
       } else {
         setError('Failed to load quotes');
       }

@@ -15,7 +15,7 @@ export function useUsers() {
       setUsers(res.data);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || 'Failed to load users');
+        setError(err.response?.data?.error || 'Failed to load users');
       } else {
         setError('Failed to load users');
       }
