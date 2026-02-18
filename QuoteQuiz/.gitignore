@@ -1,0 +1,60 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Runtime & logs
+*.log
+*.tmp
+*.temp
+Logs/
+logs/
+
+# Entity Framework migrations (keep migrations, ignore snapshots if desired)
+# Uncomment below only if you want to exclude migrations:
+# **/Migrations/
+
+# Sensitive config - override locally via environment variables or user secrets
+# appsettings.Development.json
+# appsettings.Production.json
+
+# User secrets
+secrets.json
+*.pfx
+*.p12
+
+# Test results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+*.trx
+
+# Publish output
+publish/
+**/publish/
+
+# Docker
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
