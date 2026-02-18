@@ -45,7 +45,7 @@ public class QuizServiceTests
             })
             .ToList();
 
-    private void SetupNoShownQuotes(int userId = 1) =>
+    private void SetupNoShownQuotes() =>
         _mockShownQuotesRepo
             .Setup(r => r.FindAsync(It.IsAny<Expression<Func<ShownQuote, bool>>>()))
             .ReturnsAsync(new List<ShownQuote>());
@@ -247,8 +247,16 @@ public class QuizServiceTests
     public async Task SubmitAnswerAsync_WrongAnswer_ReturnsIsCorrectFalse()
     {
         // Arrange
+        // Binary mode: displayed author IS the correct author, but user clicks "No" (SelectedAnswer = "__wrong__")
+        // userAgreed=false, displayedCorrect=true → isCorrect = false == true → false
         var quote = new Quote { Id = 1, QuoteText = "Quote 1", AuthorName = "Albert Einstein", CreatedByUserId = 1 };
-        var dto = new SubmitAnswerDto { QuoteId = 1, SelectedAnswer = "Wrong Author", QuizMode = "Binary" };
+        var dto = new SubmitAnswerDto
+        {
+            QuoteId = 1,
+            SelectedAnswer = "__wrong__",       // user said "No"
+            DisplayedAuthor = "Albert Einstein", // but the displayed author was actually correct
+            QuizMode = "Binary"
+        };
 
         _mockQuotesRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(quote);
         _mockShownQuotesRepo
