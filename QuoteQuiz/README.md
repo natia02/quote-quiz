@@ -9,6 +9,7 @@ A RESTful API for the Famous Quote Quiz application built with **.NET 8** and **
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
 - [Project Structure](#project-structure)
+- [Core Business Logic](#core-business-logic)
 - [Architecture: Why Clean Architecture](#architecture-why-clean-architecture)
 - [Design Patterns](#design-patterns)
 - [Authentication & Security](#authentication--security)
@@ -83,7 +84,7 @@ The API starts at `https://localhost:5294`. Migrations and database seeding run 
 
 ### 4. Open Swagger
 
-Navigate to `https://localhost:5294/swagger` to explore and test all endpoints interactively.
+Navigate to `http://localhost:5294/swagger` to explore and test all endpoints interactively.
 
 ---
 
@@ -118,6 +119,59 @@ QuoteQuiz/
 └── QuoteQuiz.Tests/            # Unit tests
     └── Services/               # Service-level tests
 ```
+
+---
+
+## Core Business Logic
+
+Understanding what the system does makes the architectural decisions easier to follow.
+
+### Quiz Modes
+
+The application supports two modes, selected per session and persisted in the frontend:
+
+**Binary mode (Yes / No)**
+The API picks an unseen quote and randomly assigns a displayed author — 50% chance it's the real author, 50% chance it's a random wrong one from the pool. The user answers Yes ("this is the real author") or No ("this isn't the real author").
+
+Answer evaluation:
+```
+userAgreed       = selectedAnswer == displayedAuthor
+displayedCorrect = displayedAuthor == quote.AuthorName
+isCorrect        = userAgreed == displayedCorrect
+```
+
+This means both "Yes to the right author" and "No to the wrong author" are correct. The `DisplayedAuthor` field is sent back in the submit request so the backend can evaluate this correctly regardless of what was shown on screen.
+
+**Multiple choice mode**
+The API picks an unseen quote and builds a 3-option list: 1 correct author + 2 random wrong authors shuffled together. The user picks one. The answer is correct if `selectedAnswer == quote.AuthorName` (case-insensitive).
+
+---
+
+### Quote Rotation (No Repeats)
+
+Each user has a `ShownQuotes` table tracking which quotes they have seen. The flow on every `GET /quiz/question`:
+
+1. Load all `ShownQuoteId`s for this user
+2. Filter the full quote pool to only unseen quotes
+3. If the unseen list is empty → **delete all ShownQuotes for this user** (reset) and start over
+4. Pick a random quote from the unseen list
+
+A `ShownQuote` record is written only when the user submits an answer, not when they receive the question. This ensures a quote is only marked seen once it has actually been answered.
+
+The composite unique index on `(UserId, QuoteId)` at the database level guarantees no duplicate tracking records even under concurrent requests.
+
+---
+
+### Services and Their Responsibilities
+
+| Service | Responsibility |
+|---|---|
+| `AuthService` | Register, login, password hashing, JWT generation |
+| `TokenService` | Builds and signs JWT tokens with user claims |
+| `QuizService` | Question generation (both modes), answer evaluation, ShownQuote tracking |
+| `QuoteService` | Quote CRUD, author list, delete-guard (can't delete a quote used in game history) |
+| `UserService` | User CRUD, disable (soft), delete, password hashing for admin-created users |
+| `GameHistoryService` | Fetch personal history, compute statistics, fetch all history for admin |
 
 ---
 
@@ -389,6 +443,10 @@ The database is created and seeded automatically when the application starts. No
 ## Testing
 
 Tests are in `QuoteQuiz.Tests` using **xUnit** and **Moq**.
+
+```bash
+dotnet test
+```
 
 **What is tested:**
 
