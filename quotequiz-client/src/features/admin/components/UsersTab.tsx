@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useUsers } from '../hooks/useUsers';
 import UserForm from './UserForm';
+import ConfirmDialog from '../../../shared/components/ConfirmDialog';
 import type { UserDto, CreateUserRequest } from '../types';
 
 type SortKey = 'userName' | 'email' | 'role' | 'createdAt';
@@ -10,6 +11,7 @@ export default function UsersTab() {
   const { users, loading, error, create, update, disable, remove } = useUsers();
   const [showForm, setShowForm] = useState(false);
   const [editUser, setEditUser] = useState<UserDto | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UserDto | null>(null);
   const [roleFilter, setRoleFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const [search, setSearch] = useState('');
@@ -40,8 +42,9 @@ export default function UsersTab() {
     else await create(data as CreateUserRequest);
   };
 
-  const handleDelete = async (user: UserDto) => {
-    if (confirm(`Delete user "${user.userName}"? This cannot be undone.`)) await remove(user.id);
+  const handleDelete = async () => {
+    if (deleteTarget) await remove(deleteTarget.id);
+    setDeleteTarget(null);
   };
 
   const SortIcon = ({ k }: { k: SortKey }) => (
@@ -114,7 +117,7 @@ export default function UsersTab() {
                     {u.isActive && (
                       <button onClick={() => disable(u.id)} className="text-xs px-2 py-1 rounded bg-slate-100 hover:bg-yellow-100 hover:text-yellow-700 text-slate-600 transition-colors cursor-pointer">Disable</button>
                     )}
-                    <button onClick={() => handleDelete(u)} className="text-xs px-2 py-1 rounded bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 transition-colors cursor-pointer">Delete</button>
+                    <button onClick={() => setDeleteTarget(u)} className="text-xs px-2 py-1 rounded bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 transition-colors cursor-pointer">Delete</button>
                   </div>
                 </td>
               </tr>
@@ -126,6 +129,15 @@ export default function UsersTab() {
 
       {showForm && (
         <UserForm user={editUser} onSave={handleSave} onClose={() => { setShowForm(false); setEditUser(null); }} />
+      )}
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title="Delete user"
+          message={`Are you sure you want to delete "${deleteTarget.userName}"? This cannot be undone.`}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   );

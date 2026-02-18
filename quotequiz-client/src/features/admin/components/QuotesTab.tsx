@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAdminQuotes } from '../hooks/useAdminQuotes';
 import QuoteForm from './QuoteForm';
+import ConfirmDialog from '../../../shared/components/ConfirmDialog';
 import type { QuoteDto, CreateQuoteRequest } from '../types';
 
 type SortKey = 'quoteText' | 'authorName' | 'createdByUserName' | 'createdAt';
@@ -10,6 +11,7 @@ export default function QuotesTab() {
   const { quotes, loading, error, create, update, remove } = useAdminQuotes();
   const [showForm, setShowForm] = useState(false);
   const [editQuote, setEditQuote] = useState<QuoteDto | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<QuoteDto | null>(null);
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('createdAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -38,8 +40,9 @@ export default function QuotesTab() {
     else await create(data);
   };
 
-  const handleDelete = async (qt: QuoteDto) => {
-    if (confirm(`Delete quote by "${qt.authorName}"? This cannot be undone.`)) await remove(qt.id);
+  const handleDelete = async () => {
+    if (deleteTarget) await remove(deleteTarget.id);
+    setDeleteTarget(null);
   };
 
   const SortIcon = ({ k }: { k: SortKey }) => (
@@ -87,7 +90,7 @@ export default function QuotesTab() {
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-center gap-2">
                     <button onClick={() => { setEditQuote(qt); setShowForm(true); }} className="text-xs px-2 py-1 rounded bg-slate-100 hover:bg-indigo-100 hover:text-indigo-700 text-slate-600 transition-colors cursor-pointer">Edit</button>
-                    <button onClick={() => handleDelete(qt)} className="text-xs px-2 py-1 rounded bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 transition-colors cursor-pointer">Delete</button>
+                    <button onClick={() => setDeleteTarget(qt)} className="text-xs px-2 py-1 rounded bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 transition-colors cursor-pointer">Delete</button>
                   </div>
                 </td>
               </tr>
@@ -99,6 +102,15 @@ export default function QuotesTab() {
 
       {showForm && (
         <QuoteForm quote={editQuote} onSave={handleSave} onClose={() => { setShowForm(false); setEditQuote(null); }} />
+      )}
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title="Delete quote"
+          message={`Are you sure you want to delete this quote by "${deleteTarget.authorName}"? This cannot be undone.`}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   );
