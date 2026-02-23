@@ -1,0 +1,39 @@
+services:
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      SA_PASSWORD: "QuoteQuiz!Pass123"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U SA -P 'QuoteQuiz!Pass123' -Q 'SELECT 1' -C -b"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  backend:
+    build:
+      context: ./QuoteQuiz
+    ports:
+      - "5294:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=QuoteQuizDb;User Id=sa;Password=QuoteQuiz!Pass123;TrustServerCertificate=true
+      - JwtSettings__SecretKey=de4d2aa3ed93f52a27a5f6c6a060a1b2
+      - JwtSettings__Issuer=QuoteQuizAPI
+      - JwtSettings__Audience=QuoteQuizClient
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./quotequiz-client
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
